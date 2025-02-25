@@ -1,26 +1,43 @@
 image: docker:latest
 
 services:
-  - docker:dind
+  - docker:dind  # Docker-in-Docker pour permettre d'utiliser Docker dans le pipeline
+  - mongo  # Ajout de MongoDB pour les tests
 
 stages:
+  - test  # Ajout du stage de test
   - build
-  - test
+  - push
 
 variables:
-  IMAGE_BACKEND: registry.gitlab.com/mon-projet/backend
-  IMAGE_FRONTEND: registry.gitlab.com/mon-projet/frontend
+  DOCKER_REGISTRY: "docker.io"  # Docker Hub
+  CI_REGISTRY_IMAGE_BACKEND: "$DOCKER_USERNAME/my-backend"  # Nom d'image pour le backend sur Docker Hub
+  CI_REGISTRY_IMAGE_FRONTEND: "$DOCKER_USERNAME/my-frontend"  # Nom d'image pour le frontend sur Docker Hub
+  MONGO_URI: "mongodb://root:example@mongo:27017/ecommerce?authSource=admin"  # Connexion à MongoDB pour les tests
 
-build_backend:
+before_script:
+  - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" $DOCKER_REGISTRY  # Connexion à Docker Hub
+
+# 📌 **Job de test du backend**
+test_backend:
+  stage: test
+  image: node:18  # Image Node.js pour exécuter les tests
+  before_script:
+    - cd backend
+    - npm install
+  script:
+    - npm test  # Exécuter Jest pour tester l'API
+
+# 📌 **Job de Build du Backend**
+backend:
   stage: build
   script:
-    - docker build -t $IMAGE_BACKEND ./backend
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker push $IMAGE_BACKEND
+    - docker build -t $CI_REGISTRY_IMAGE_BACKEND:latest ./backend  # Construction de l'image backend
+    - docker push $CI_REGISTRY_IMAGE_BACKEND:latest  # Pousser l'image backend avec tag 'latest'
 
-build_frontend:
+# 📌 **Job de Build du Frontend**
+frontend:
   stage: build
   script:
-    - docker build -t $IMAGE_FRONTEND ./frontend
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker push $IMAGE_FRONTEND
+    - docker build -t $CI_REGISTRY_IMAGE_FRONTEND:latest ./frontend  # Construction de l'image frontend
+    - docker push $CI_REGISTRY_IMAGE_FRONTEND:latest  # Pousser l'image frontend avec tag 'latest'

@@ -43,4 +43,9 @@ app.delete("/products/:id", async (req, res) => {
   res.json({ message: "Produit supprimé" });
 });
 
-app.listen(5000, () => console.log("Serveur backend sur http://localhost:5000"));
+// Évite de démarrer le serveur si on est en mode test
+if (process.env.NODE_ENV !== "test") {
+  app.listen(5000, () => console.log("Serveur backend sur http://localhost:5000"));
+}
+
+module.exports = app; // Exporter l'application pour les tests

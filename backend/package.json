@@ -9,6 +9,7 @@
     "mongoose": "^6.8.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest"
   }
 }
