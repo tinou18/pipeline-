@@ -1,28 +1,26 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
 stages:
   - build
   - test
-  - deploy
 
-build-backend:
+variables:
+  IMAGE_BACKEND: registry.gitlab.com/mon-projet/backend
+  IMAGE_FRONTEND: registry.gitlab.com/mon-projet/frontend
+
+build_backend:
   stage: build
   script:
-    - cd backend
-    - npm install
-    - echo "Backend built!"
+    - docker build -t $IMAGE_BACKEND ./backend
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker push $IMAGE_BACKEND
 
-build-frontend:
+build_frontend:
   stage: build
   script:
-    - cd frontend
-    - npm install
-    - npm run build
-
-test-backend:
-  stage: test
-  script:
-    - echo "Tests Backend"
-
-deploy:
-  stage: deploy
-  script:
-    - echo "Déploiement en cours..."
+    - docker build -t $IMAGE_FRONTEND ./frontend
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker push $IMAGE_FRONTEND
